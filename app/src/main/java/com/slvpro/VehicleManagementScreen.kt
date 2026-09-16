@@ -1,80 +1,67 @@
 package com.slvpro
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.slvpro.data.AppDatabase
 import com.slvpro.data.Vehicle
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 @Composable
-fun VehicleManagementScreen(
-    database: AppDatabase
-) {
+fun VehicleManagementScreen(database: AppDatabase) {
+
     val dao = database.fleetDao()
+    val scope = rememberCoroutineScope()
 
     val vehicles by dao
         .getVehicles()
         .collectAsState(initial = emptyList())
 
-    var editingVehicle by remember {
-        mutableStateOf<Vehicle?>(null)
-    }
-
-    var showForm by remember {
-        mutableStateOf(false)
-    }
+    var editingVehicle by remember { mutableStateOf<Vehicle?>(null) }
+    var showForm by remember { mutableStateOf(false) }
 
     if (showForm) {
+
         VehicleForm(
             existing = editingVehicle,
+
             onSave = { vehicle ->
-                dao.insertVehicle(vehicle)
+
+                scope.launch {
+                    dao.insertVehicle(vehicle)
+                }
+
                 editingVehicle = null
                 showForm = false
             },
+
             onCancel = {
                 editingVehicle = null
                 showForm = false
             }
         )
+
         return
     }
 
     Column(
-        modifier = Modifier
+        Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
 
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
 
             Text(
-                text = "Vehicle Management",
+                "Vehicle Management",
                 style = MaterialTheme.typography.headlineSmall
             )
 
@@ -88,9 +75,7 @@ fun VehicleManagementScreen(
             }
         }
 
-        Spacer(
-            modifier = Modifier.height(12.dp)
-        )
+        Spacer(Modifier.height(12.dp))
 
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -102,11 +87,11 @@ fun VehicleManagementScreen(
             ) { vehicle ->
 
                 Card(
-                    modifier = Modifier.fillMaxWidth()
+                    Modifier.fillMaxWidth()
                 ) {
 
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        Modifier.padding(16.dp)
                     ) {
 
                         Text(
@@ -122,9 +107,7 @@ fun VehicleManagementScreen(
                             "Owner: ${vehicle.owner}"
                         )
 
-                        Spacer(
-                            modifier = Modifier.height(8.dp)
-                        )
+                        Spacer(Modifier.height(8.dp))
 
                         Row(
                             horizontalArrangement =
@@ -142,7 +125,9 @@ fun VehicleManagementScreen(
 
                             OutlinedButton(
                                 onClick = {
-                                    dao.deleteVehicle(vehicle)
+                                    scope.launch {
+                                        dao.deleteVehicle(vehicle)
+                                    }
                                 }
                             ) {
                                 Text("Delete")
@@ -154,7 +139,6 @@ fun VehicleManagementScreen(
         }
     }
 }
-
 
 @Composable
 private fun VehicleForm(
@@ -198,46 +182,35 @@ private fun VehicleForm(
     }
 
     var pucDays by remember {
-        mutableStateOf(
-            daysFromExpiry(existing?.pucExpiry)
-        )
+        mutableStateOf(daysFromExpiry(existing?.pucExpiry))
     }
 
     var insuranceDays by remember {
-        mutableStateOf(
-            daysFromExpiry(existing?.insuranceExpiry)
-        )
+        mutableStateOf(daysFromExpiry(existing?.insuranceExpiry))
     }
 
     var fitnessDays by remember {
-        mutableStateOf(
-            daysFromExpiry(existing?.fitnessExpiry)
-        )
+        mutableStateOf(daysFromExpiry(existing?.fitnessExpiry))
     }
 
     var permitDays by remember {
-        mutableStateOf(
-            daysFromExpiry(existing?.permitExpiry)
-        )
+        mutableStateOf(daysFromExpiry(existing?.permitExpiry))
     }
 
     var taxDays by remember {
-        mutableStateOf(
-            daysFromExpiry(existing?.taxExpiry)
-        )
+        mutableStateOf(daysFromExpiry(existing?.taxExpiry))
     }
 
     LazyColumn(
-        modifier = Modifier
+        Modifier
             .fillMaxSize()
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
 
         item {
-
             Text(
-                text = if (existing == null)
+                if (existing == null)
                     "Add Vehicle"
                 else
                     "Edit Vehicle",
@@ -383,7 +356,7 @@ private fun VehicleForm(
         item {
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                Modifier.fillMaxWidth(),
                 horizontalArrangement =
                     Arrangement.spacedBy(8.dp)
             ) {
@@ -391,10 +364,11 @@ private fun VehicleForm(
                 Button(
                     onClick = {
 
-                        if (vehicleNo.isBlank()) return@Button
+                        if (vehicleNo.isBlank()) {
+                            return@Button
+                        }
 
-                        val now =
-                            System.currentTimeMillis()
+                        val now = System.currentTimeMillis()
 
                         onSave(
                             Vehicle(
@@ -403,40 +377,30 @@ private fun VehicleForm(
                                 model = model,
                                 owner = owner,
                                 chassisNo = chassisNo,
-
-                                pucExpiry =
-                                    expiryFromDays(pucDays, now),
-
-                                insuranceExpiry =
-                                    expiryFromDays(
-                                        insuranceDays,
-                                        now
-                                    ),
-
-                                fitnessExpiry =
-                                    expiryFromDays(
-                                        fitnessDays,
-                                        now
-                                    ),
-
+                                pucExpiry = expiryFromDays(
+                                    pucDays,
+                                    now
+                                ),
+                                insuranceExpiry = expiryFromDays(
+                                    insuranceDays,
+                                    now
+                                ),
+                                fitnessExpiry = expiryFromDays(
+                                    fitnessDays,
+                                    now
+                                ),
                                 permitType = permitType,
-
-                                permitExpiry =
-                                    expiryFromDays(
-                                        permitDays,
-                                        now
-                                    ),
-
-                                taxExpiry =
-                                    expiryFromDays(
-                                        taxDays,
-                                        now
-                                    ),
-
+                                permitExpiry = expiryFromDays(
+                                    permitDays,
+                                    now
+                                ),
+                                taxExpiry = expiryFromDays(
+                                    taxDays,
+                                    now
+                                ),
                                 fastagBalance =
                                     fastagBalance.toIntOrNull()
                                         ?: 0,
-
                                 fastagId = fastagId
                             )
                         )
@@ -457,7 +421,6 @@ private fun VehicleForm(
     }
 }
 
-
 private fun expiryFromDays(
     value: String,
     now: Long
@@ -468,7 +431,6 @@ private fun expiryFromDays(
 
     return now + TimeUnit.DAYS.toMillis(days)
 }
-
 
 private fun daysFromExpiry(
     expiry: Long?
