@@ -1,333 +1,392 @@
 package com.slvpro
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.slvpro.data.AppDatabase
 import com.slvpro.data.Driver
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
-import kotlin.math.ceil
 
 @Composable
-fun DriverManagementScreen(
-    database: AppDatabase
-) {
+fun DriverManagementScreen(database: AppDatabase) {
 
     val dao = database.fleetDao()
+    val scope = rememberCoroutineScope()
 
     val drivers by dao
         .getDrivers()
         .collectAsState(initial = emptyList())
 
-    var showAddForm by remember {
-        mutableStateOf(false)
+    var showForm by remember { mutableStateOf(false) }
+    var editingDriver by remember { mutableStateOf<Driver?>(null) }
+
+    if (showForm) {
+
+        DriverForm(
+            existing = editingDriver,
+
+            onSave = { driver ->
+
+                scope.launch {
+                    dao.insertDriver(driver)
+                }
+
+                editingDriver = null
+                showForm = false
+            },
+
+            onCancel = {
+                editingDriver = null
+                showForm = false
+            }
+        )
+
+        return
     }
 
     Column(
-        modifier = Modifier
+        Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
 
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
 
             Text(
-                text = "Driver Management",
+                "Driver Management",
                 style = MaterialTheme.typography.headlineSmall
             )
 
             Button(
                 onClick = {
-                    showAddForm = !showAddForm
+                    editingDriver = null
+                    showForm = true
                 }
             ) {
-                Text("Add")
+                Text("Add Driver")
             }
         }
 
-        Spacer(
-            modifier = Modifier.height(12.dp)
-        )
-
-        if (showAddForm) {
-
-            AddDriverForm(
-                database = database,
-                onSaved = {
-                    showAddForm = false
-                }
-            )
-
-            Spacer(
-                modifier = Modifier.height(16.dp)
-            )
-        }
+        Spacer(Modifier.height(12.dp))
 
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
 
             items(
-                items = drivers,
+                drivers,
                 key = { it.driverId }
             ) { driver ->
 
-                DriverCard(
-                    driver = driver,
-                    onDelete = {
-                        dao.deleteDriver(driver)
+                Card(
+                    Modifier.fillMaxWidth()
+                ) {
+
+                    Column(
+                        Modifier.padding(16.dp)
+                    ) {
+
+                        Text(
+                            driver.name,
+                            style = MaterialTheme.typography.titleLarge
+                        )
+
+                        Text("Driver ID: ${driver.driverId}")
+
+                        Text("License: ${driver.licenseNo}")
+
+                        Text("Phone: ${driver.phone}")
+
+                        if (driver.assignedVehicle.isNotBlank()) {
+                            Text(
+                                "Vehicle: ${driver.assignedVehicle}"
+                            )
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+
+                        val daysLeft =
+                            calculateDriverDaysLeft(
+                                driver.licenseExpiry
+                            )
+
+                        if (driver.licenseExpiry > 0L &&
+                            daysLeft <= 7
+                        ) {
+
+                            Text(
+                                when {
+                                    daysLeft < 0 ->
+                                        "🚨 License expired ${-daysLeft} days ago"
+
+                                    daysLeft == 0 ->
+                                        "🚨 License expires today"
+
+                                    else ->
+                                        "⚠️ License expires in $daysLeft days"
+                                },
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+
+                        Row(
+                            horizontalArrangement =
+                                Arrangement.spacedBy(8.dp)
+                        ) {
+
+                            OutlinedButton(
+                                onClick = {
+                                    editingDriver = driver
+                                    showForm = true
+                                }
+                            ) {
+                                Text("Edit")
+                            }
+
+                            OutlinedButton(
+                                onClick = {
+                                    scope.launch {
+                                        dao.deleteDriver(driver)
+                                    }
+                                }
+                            ) {
+                                Text("Delete")
+                            }
+                        }
                     }
-                )
+                }
             }
         }
     }
 }
 
-
 @Composable
-private fun AddDriverForm(
-    database: AppDatabase,
-    onSaved: () -> Unit
+private fun DriverForm(
+    existing: Driver?,
+    onSave: (Driver) -> Unit,
+    onCancel: () -> Unit
 ) {
 
-    val dao = database.fleetDao()
-
     var driverId by remember {
-        mutableStateOf("")
+        mutableStateOf(existing?.driverId ?: "")
     }
 
     var name by remember {
-        mutableStateOf("")
+        mutableStateOf(existing?.name ?: "")
     }
 
     var licenseNo by remember {
-        mutableStateOf("")
+        mutableStateOf(existing?.licenseNo ?: "")
     }
 
     var phone by remember {
-        mutableStateOf("")
+        mutableStateOf(existing?.phone ?: "")
     }
 
     var assignedVehicle by remember {
-        mutableStateOf("")
+        mutableStateOf(existing?.assignedVehicle ?: "")
     }
 
-    var expiryDays by remember {
-        mutableStateOf("365")
+    var licenseDays by remember {
+        mutableStateOf(
+            driverDaysFromExpiry(
+                existing?.licenseExpiry
+            )
+        )
     }
 
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+    LazyColumn(
+        Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement =
+            Arrangement.spacedBy(8.dp)
     ) {
 
-        OutlinedTextField(
-            value = driverId,
-            onValueChange = {
-                driverId = it
-            },
-            label = {
-                Text("Driver ID")
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        OutlinedTextField(
-            value = name,
-            onValueChange = {
-                name = it
-            },
-            label = {
-                Text("Driver Name")
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        OutlinedTextField(
-            value = licenseNo,
-            onValueChange = {
-                licenseNo = it
-            },
-            label = {
-                Text("License No.")
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        OutlinedTextField(
-            value = phone,
-            onValueChange = {
-                phone = it
-            },
-            label = {
-                Text("Phone")
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        OutlinedTextField(
-            value = assignedVehicle,
-            onValueChange = {
-                assignedVehicle = it
-            },
-            label = {
-                Text("Assigned Vehicle")
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        OutlinedTextField(
-            value = expiryDays,
-            onValueChange = {
-                expiryDays = it
-            },
-            label = {
-                Text("License expiry — days from today")
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Button(
-            onClick = {
-
-                val days =
-                    expiryDays.toLongOrNull() ?: 365L
-
-                dao.insertDriver(
-                    Driver(
-                        driverId = driverId,
-                        name = name,
-                        licenseNo = licenseNo,
-                        phone = phone,
-                        licenseExpiry =
-                            System.currentTimeMillis() +
-                                    TimeUnit.DAYS.toMillis(days),
-                        assignedVehicle = assignedVehicle
-                    )
-                )
-
-                onSaved()
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Save Driver")
+        item {
+            Text(
+                if (existing == null)
+                    "Add Driver"
+                else
+                    "Edit Driver",
+                style = MaterialTheme.typography.headlineSmall
+            )
         }
-    }
-}
 
-
-@Composable
-private fun DriverCard(
-    driver: Driver,
-    onDelete: () -> Unit
-) {
-
-    val daysLeft = licenseDaysLeft(
-        driver.licenseExpiry
-    )
-
-    val warning = daysLeft <= 7
-
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-
-            Text(
-                text = driver.name,
-                style = MaterialTheme.typography.titleLarge
+        item {
+            OutlinedTextField(
+                value = driverId,
+                onValueChange = { driverId = it },
+                label = { Text("Driver ID") },
+                placeholder = { Text("D001") },
+                modifier = Modifier.fillMaxWidth()
             )
+        }
 
-            Text(
-                text = "Driver ID: ${driver.driverId}"
+        item {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Driver Name") },
+                modifier = Modifier.fillMaxWidth()
             )
+        }
 
-            Text(
-                text = "License: ${driver.licenseNo}"
+        item {
+            OutlinedTextField(
+                value = licenseNo,
+                onValueChange = { licenseNo = it },
+                label = { Text("License No.") },
+                modifier = Modifier.fillMaxWidth()
             )
+        }
 
-            Text(
-                text = "Phone: ${driver.phone}"
+        item {
+            OutlinedTextField(
+                value = phone,
+                onValueChange = { phone = it },
+                label = { Text("Phone") },
+                modifier = Modifier.fillMaxWidth()
             )
+        }
 
-            Text(
-                text = "Vehicle: ${driver.assignedVehicle}"
-            )
-
-            Spacer(
-                modifier = Modifier.height(6.dp)
-            )
-
-            Text(
-                text = when {
-                    daysLeft < 0 ->
-                        "🔴 License expired ${-daysLeft} days ago"
-
-                    daysLeft == 0 ->
-                        "🔴 License expires today"
-
-                    daysLeft <= 7 ->
-                        "🟠 License expires in $daysLeft days"
-
-                    else ->
-                        "✅ License: $daysLeft days left"
+        item {
+            OutlinedTextField(
+                value = assignedVehicle,
+                onValueChange = {
+                    assignedVehicle = it
                 },
-                color =
-                    if (warning)
-                        MaterialTheme.colorScheme.error
-                    else
-                        MaterialTheme.colorScheme.primary
+                label = { Text("Assigned Vehicle") },
+                placeholder = {
+                    Text("KA51 AB 1234")
+                },
+                modifier = Modifier.fillMaxWidth()
             )
+        }
 
-            Spacer(
-                modifier = Modifier.height(8.dp)
+        item {
+            Text(
+                "License expiry — enter days from today",
+                style = MaterialTheme.typography.titleMedium
             )
+        }
 
-            OutlinedButton(
-                onClick = onDelete
+        item {
+            OutlinedTextField(
+                value = licenseDays,
+                onValueChange = {
+                    licenseDays = it
+                },
+                label = { Text("License days") },
+                placeholder = { Text("365") },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        item {
+
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement =
+                    Arrangement.spacedBy(8.dp)
             ) {
-                Text("Delete")
+
+                Button(
+                    onClick = {
+
+                        if (driverId.isBlank() ||
+                            name.isBlank()
+                        ) {
+                            return@Button
+                        }
+
+                        val now =
+                            System.currentTimeMillis()
+
+                        onSave(
+                            Driver(
+                                driverId =
+                                    driverId.trim(),
+                                name = name.trim(),
+                                licenseNo =
+                                    licenseNo.trim(),
+                                phone = phone.trim(),
+                                licenseExpiry =
+                                    driverExpiryFromDays(
+                                        licenseDays,
+                                        now
+                                    ),
+                                assignedVehicle =
+                                    assignedVehicle.trim()
+                            )
+                        )
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Save")
+                }
+
+                OutlinedButton(
+                    onClick = onCancel,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Cancel")
+                }
             }
         }
     }
 }
 
+private fun driverExpiryFromDays(
+    value: String,
+    now: Long
+): Long {
 
-private fun licenseDaysLeft(
-    expiry: Long
-): Int {
+    val days = value.toLongOrNull()
+        ?: return 0L
+
+    return now +
+        TimeUnit.DAYS.toMillis(days)
+}
+
+private fun driverDaysFromExpiry(
+    expiry: Long?
+): String {
+
+    if (expiry == null || expiry <= 0L) {
+        return ""
+    }
 
     val difference =
         expiry - System.currentTimeMillis()
 
-    return ceil(
-        difference.toDouble() /
-                (24L * 60L * 60L * 1000L)
-    ).toInt()
+    return (
+        difference /
+            TimeUnit.DAYS.toMillis(1)
+        ).toString()
+}
+
+private fun calculateDriverDaysLeft(
+    expiry: Long
+): Long {
+
+    if (expiry <= 0L) {
+        return 0L
+    }
+
+    val difference =
+        expiry - System.currentTimeMillis()
+
+    return difference /
+        TimeUnit.DAYS.toMillis(1)
 }
