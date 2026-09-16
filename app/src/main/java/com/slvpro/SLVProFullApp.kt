@@ -142,7 +142,7 @@ if (showDriverManagement) {
                 }
             )
 
-            1 -> SimpleComingScreen("📦 Trips / LR Management")
+            1 -> TripManagementScreen(database)
 
             2 -> SimpleComingScreen("⛽ Fuel Log")
 
