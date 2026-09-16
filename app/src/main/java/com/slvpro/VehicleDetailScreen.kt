@@ -40,14 +40,22 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.ceil
-
+Row(
+    modifier = Modifier.fillMaxWidth(),
+    horizontalArrangement = Arrangement.Start
+) {
+    OutlinedButton(
+        onClick = onBack
+    ) {
+        Text("← Back")
+    }
+}
 @Composable
 fun VehicleDetailScreen(
     vehicle: Vehicle,
     context: Context,
     onBack: () -> Unit
 ) {
-
     var currentIndex by remember {
         mutableIntStateOf(0)
     }
