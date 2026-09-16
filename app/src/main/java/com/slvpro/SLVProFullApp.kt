@@ -23,6 +23,7 @@ fun SLVProFullApp() {
     var selectedTab by remember { mutableIntStateOf(0) }
     var selectedVehicle by remember { mutableStateOf<Vehicle?>(null) }
     var showVehicleManagement by remember { mutableStateOf(false) }
+    var showDriverManagement by remember { mutableStateOf(false) }
 
     if (selectedVehicle != null) {
         VehicleDetailScreen(
@@ -37,7 +38,10 @@ fun SLVProFullApp() {
         VehicleManagementScreen(database)
         return
     }
-
+if (showDriverManagement) {
+    DriverManagementScreen(database)
+    return
+}
     val tabs = listOf(
         "Fleet",
         "Trips",
@@ -56,19 +60,32 @@ fun SLVProFullApp() {
                     )
                 },
                 actions = {
-                    if (selectedTab == 0) {
-                        IconButton(
-                            onClick = {
-                                showVehicleManagement = true
-                            }
-                        ) {
-                            Icon(
-                                Icons.Default.Settings,
-                                contentDescription = "Vehicle Management"
-                            )
-                        }
-                    }
-                }
+
+    if (selectedTab == 0) {
+
+        IconButton(
+            onClick = {
+                showVehicleManagement = true
+            }
+        ) {
+            Icon(
+                Icons.Default.Settings,
+                contentDescription = "Vehicle Management"
+            )
+        }
+
+        IconButton(
+            onClick = {
+                showDriverManagement = true
+            }
+        ) {
+            Icon(
+                Icons.Default.Person,
+                contentDescription = "Driver Management"
+            )
+        }
+    }
+}
             )
         },
         bottomBar = {
