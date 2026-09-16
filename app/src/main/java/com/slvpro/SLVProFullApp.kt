@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.slvpro.data.AppDatabase
 import com.slvpro.data.Vehicle
-
+import androidx.compose.material.icons.filled.CameraAlt
 @Composable
 fun SLVProFullApp() {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -49,7 +49,14 @@ if (showDriverManagement) {
         "Expense",
         "Reports"
     )
-
+if (showDocumentScanner) {
+    DocumentScannerScreen(
+        onBack = {
+            showDocumentScanner = false
+        }
+    )
+    return
+}
     Scaffold(
         topBar = {
             TopAppBar(
