@@ -42,7 +42,21 @@ import com.slvpro.data.Vehicle
 fun SLVProFullApp() {
 
     val context = androidx.compose.ui.platform.LocalContext.current
+var selectedVehicle by androidx.compose.runtime.remember {
+    androidx.compose.runtime.mutableStateOf<Vehicle?>(null)
+}
+if (selectedVehicle != null) {
 
+    VehicleDetailScreen(
+        vehicle = selectedVehicle!!,
+        context = context,
+        onBack = {
+            selectedVehicle = null
+        }
+    )
+
+    return
+}
     var selectedTab = androidx.compose.runtime.remember {
         androidx.compose.runtime.mutableIntStateOf(0)
     }
@@ -254,19 +268,29 @@ fun FleetListScreen(
         }
 
         items(
-            items = vehicles,
-            key = { it.vehicleNo }
-        ) { vehicle ->
+    items = vehicles,
+    key = { it.vehicleNo }
+) { vehicle ->
 
-            VehicleCard(vehicle)
+    androidx.compose.foundation.clickable(
+        onClick = {
+            selectedVehicle = vehicle
         }
+    ).let { modifier ->
+
+        VehicleCard(
+            vehicle = vehicle,
+            modifier = modifier
+        )
     }
+}
 }
 
 
 @Composable
 fun VehicleCard(
     vehicle: Vehicle
+    modifier: Modifier = Modifier
 ) {
 
     Card(
