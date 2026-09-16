@@ -144,7 +144,7 @@ if (showDriverManagement) {
 
             1 -> TripManagementScreen(database)
 
-            2 -> SimpleComingScreen("⛽ Fuel Log")
+            2 -> FuelManagementScreen(database)
 
             3 -> SimpleComingScreen("💰 Expense Tracker")
 
