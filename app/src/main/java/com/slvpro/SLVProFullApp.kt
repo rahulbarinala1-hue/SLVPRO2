@@ -148,7 +148,7 @@ if (showDriverManagement) {
 
             3 -> ExpenseManagementScreen(database)
 
-            4 -> SimpleComingScreen("📊 Reports & Analytics")
+            4 -> ReportsScreen(database)
         }
     }
 }
