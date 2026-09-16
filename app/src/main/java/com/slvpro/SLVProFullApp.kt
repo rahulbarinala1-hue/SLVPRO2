@@ -146,7 +146,7 @@ if (showDriverManagement) {
 
             2 -> FuelManagementScreen(database)
 
-            3 -> SimpleComingScreen("💰 Expense Tracker")
+            3 -> ExpenseManagementScreen(database)
 
             4 -> SimpleComingScreen("📊 Reports & Analytics")
         }
