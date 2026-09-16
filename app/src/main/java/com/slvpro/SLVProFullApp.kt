@@ -1,37 +1,14 @@
 package com.slvpro
 
 import android.content.Context
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Assessment
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.LocalGasStation
-import androidx.compose.material.icons.filled.LocalShipping
-import androidx.compose.material.icons.filled.Money
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -40,25 +17,25 @@ import com.slvpro.data.Vehicle
 
 @Composable
 fun SLVProFullApp() {
-
     val context = androidx.compose.ui.platform.LocalContext.current
-var selectedVehicle by androidx.compose.runtime.remember {
-    androidx.compose.runtime.mutableStateOf<Vehicle?>(null)
-}
-if (selectedVehicle != null) {
+    val database = AppDatabase.getInstance(context)
 
-    VehicleDetailScreen(
-        vehicle = selectedVehicle!!,
-        context = context,
-        onBack = {
-            selectedVehicle = null
-        }
-    )
+    var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedVehicle by remember { mutableStateOf<Vehicle?>(null) }
+    var showVehicleManagement by remember { mutableStateOf(false) }
 
-    return
-}
-    var selectedTab = androidx.compose.runtime.remember {
-        androidx.compose.runtime.mutableIntStateOf(0)
+    if (selectedVehicle != null) {
+        VehicleDetailScreen(
+            vehicle = selectedVehicle!!,
+            context = context,
+            onBack = { selectedVehicle = null }
+        )
+        return
+    }
+
+    if (showVehicleManagement) {
+        VehicleManagementScreen(database)
+        return
     }
 
     val tabs = listOf(
@@ -74,21 +51,33 @@ if (selectedVehicle != null) {
             TopAppBar(
                 title = {
                     Text(
-                        text = "SLV-PRO",
+                        "SLV-PRO",
                         style = MaterialTheme.typography.titleLarge
                     )
+                },
+                actions = {
+                    if (selectedTab == 0) {
+                        IconButton(
+                            onClick = {
+                                showVehicleManagement = true
+                            }
+                        ) {
+                            Icon(
+                                Icons.Default.Settings,
+                                contentDescription = "Vehicle Management"
+                            )
+                        }
+                    }
                 }
             )
         },
         bottomBar = {
             NavigationBar {
-
                 tabs.forEachIndexed { index, title ->
-
                     NavigationBarItem(
-                        selected = selectedTab.intValue == index,
+                        selected = selectedTab == index,
                         onClick = {
-                            selectedTab.intValue = index
+                            selectedTab = index
                         },
                         icon = {
                             when (index) {
@@ -127,42 +116,33 @@ if (selectedVehicle != null) {
         }
     ) { paddingValues ->
 
-        when (selectedTab.intValue) {
-
+        when (selectedTab) {
             0 -> FleetListScreen(
                 context = context,
-                paddingValues = paddingValues
+                paddingValues = paddingValues,
+                onVehicleClick = { vehicle ->
+                    selectedVehicle = vehicle
+                }
             )
 
-            1 -> SimpleComingScreen(
-                title = "📦 Trips / LR Management"
-            )
+            1 -> SimpleComingScreen("📦 Trips / LR Management")
 
-            2 -> SimpleComingScreen(
-                title = "⛽ Fuel Log"
-            )
+            2 -> SimpleComingScreen("⛽ Fuel Log")
 
-            3 -> SimpleComingScreen(
-                title = "💰 Expense Tracker"
-            )
+            3 -> SimpleComingScreen("💰 Expense Tracker")
 
-            4 -> SimpleComingScreen(
-                title = "📊 Reports & Analytics"
-            )
+            4 -> SimpleComingScreen("📊 Reports & Analytics")
         }
     }
 }
 
-
 @Composable
 fun FleetListScreen(
     context: Context,
-    paddingValues: PaddingValues
+    paddingValues: PaddingValues,
+    onVehicleClick: (Vehicle) -> Unit
 ) {
-
-    val dao = AppDatabase
-        .getInstance(context)
-        .fleetDao()
+    val dao = AppDatabase.getInstance(context).fleetDao()
 
     val vehicles by dao
         .getVehicles()
@@ -177,31 +157,26 @@ fun FleetListScreen(
     ) {
 
         item {
-
             Text(
-                text = "🚛 SLV Professional Fleet",
+                "🚛 SLV Professional Fleet",
                 style = MaterialTheme.typography.headlineSmall
             )
 
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
+            Spacer(Modifier.height(8.dp))
         }
 
         item {
-
             if (vehicles.any { hasExpiryWithin7Days(it) }) {
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor =
-                            MaterialTheme.colorScheme.errorContainer
+                        containerColor = MaterialTheme.colorScheme.errorContainer
                     )
                 ) {
 
                     Row(
-                        modifier = Modifier.padding(16.dp),
+                        Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
 
@@ -210,19 +185,16 @@ fun FleetListScreen(
                             contentDescription = "Expiry warning"
                         )
 
-                        Spacer(
-                            modifier = Modifier.padding(6.dp)
-                        )
+                        Spacer(Modifier.width(10.dp))
 
                         Column {
-
                             Text(
-                                text = "⚠️ DOCUMENT EXPIRY WARNING",
+                                "⚠️ DOCUMENT EXPIRY WARNING",
                                 style = MaterialTheme.typography.titleMedium
                             )
 
                             Text(
-                                text = "Vehicle documents expire within 7 days."
+                                "Vehicle documents expire within 7 days."
                             )
                         }
                     }
@@ -231,28 +203,26 @@ fun FleetListScreen(
         }
 
         item {
-
             if (vehicles.any { it.fastagBalance < 500 }) {
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor =
-                            MaterialTheme.colorScheme.errorContainer
+                        containerColor = MaterialTheme.colorScheme.errorContainer
                     )
                 ) {
 
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        Modifier.padding(16.dp)
                     ) {
 
                         Text(
-                            text = "⚠️ FASTag LOW",
+                            "⚠️ FASTag LOW",
                             style = MaterialTheme.typography.titleMedium
                         )
 
                         Text(
-                            text = "One or more vehicles need FASTag recharge."
+                            "One or more vehicles need FASTag recharge."
                         )
                     }
                 }
@@ -260,93 +230,75 @@ fun FleetListScreen(
         }
 
         item {
-
             Text(
-                text = "Vehicles (${vehicles.size})",
+                "Vehicles (${vehicles.size})",
                 style = MaterialTheme.typography.titleLarge
             )
         }
 
         items(
-    items = vehicles,
-    key = { it.vehicleNo }
-) { vehicle ->
+            items = vehicles,
+            key = { it.vehicleNo }
+        ) { vehicle ->
 
-    androidx.compose.foundation.clickable(
-        onClick = {
-            selectedVehicle = vehicle
+            VehicleCard(
+                vehicle = vehicle,
+                modifier = Modifier.clickable {
+                    onVehicleClick(vehicle)
+                }
+            )
         }
-    ).let { modifier ->
-
-        VehicleCard(
-            vehicle = vehicle,
-            modifier = modifier
-        )
     }
 }
-}
-
 
 @Composable
 fun VehicleCard(
-    vehicle: Vehicle
+    vehicle: Vehicle,
     modifier: Modifier = Modifier
 ) {
-
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
 
         Column(
-            modifier = Modifier.padding(16.dp)
+            Modifier.padding(16.dp)
         ) {
 
             Text(
-                text = vehicle.vehicleNo,
+                vehicle.vehicleNo,
                 style = MaterialTheme.typography.titleLarge
             )
 
-            Spacer(
-                modifier = Modifier.height(4.dp)
+            Text(
+                "${vehicle.type} • ${vehicle.model}"
             )
 
             Text(
-                text = "${vehicle.type} • ${vehicle.model}"
+                "Owner: ${vehicle.owner}"
             )
 
-            Text(
-                text = "Owner: ${vehicle.owner}"
-            )
-
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
+            Spacer(Modifier.height(8.dp))
 
             if (vehicle.fastagBalance < 500) {
 
                 Text(
-                    text = "⚠️ LOW - Recharge!",
+                    "⚠️ LOW - Recharge!",
                     color = MaterialTheme.colorScheme.error
                 )
 
             } else {
 
-                Text(
-                    text = "✅ FASTag OK"
-                )
+                Text("✅ FASTag OK")
             }
         }
     }
 }
 
-
 @Composable
-fun SimpleComingScreen(
-    title: String
-) {
+fun SimpleComingScreen(title: String) {
 
     Column(
-        modifier = Modifier
+        Modifier
             .fillMaxSize()
             .padding(24.dp),
         verticalArrangement = Arrangement.Center,
@@ -354,20 +306,15 @@ fun SimpleComingScreen(
     ) {
 
         Text(
-            text = title,
+            title,
             style = MaterialTheme.typography.headlineSmall
         )
 
-        Spacer(
-            modifier = Modifier.height(12.dp)
-        )
+        Spacer(Modifier.height(12.dp))
 
-        Text(
-            text = "SLV-PRO module"
-        )
+        Text("SLV-PRO module")
     }
 }
-
 
 private fun hasExpiryWithin7Days(
     vehicle: Vehicle
@@ -376,7 +323,7 @@ private fun hasExpiryWithin7Days(
     val now = System.currentTimeMillis()
 
     val sevenDays =
-        now + (7L * 24L * 60L * 60L * 1000L)
+        now + 7L * 24L * 60L * 60L * 1000L
 
     return listOf(
         vehicle.pucExpiry,
@@ -384,7 +331,6 @@ private fun hasExpiryWithin7Days(
         vehicle.fitnessExpiry,
         vehicle.permitExpiry
     ).any { expiry ->
-
         expiry > 0L && expiry <= sevenDays
     }
 }
