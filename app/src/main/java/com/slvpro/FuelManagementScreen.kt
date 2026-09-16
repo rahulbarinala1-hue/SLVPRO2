@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 import com.slvpro.data.AppDatabase
 import com.slvpro.data.FuelLog
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 @Composable
 fun FuelManagementScreen(database: AppDatabase) {
@@ -24,17 +25,22 @@ fun FuelManagementScreen(database: AppDatabase) {
     var showForm by remember { mutableStateOf(false) }
 
     if (showForm) {
+
         FuelForm(
             onSave = { fuelLog ->
+
                 scope.launch {
                     dao.insertFuelLog(fuelLog)
                 }
+
                 showForm = false
             },
+
             onCancel = {
                 showForm = false
             }
         )
+
         return
     }
 
@@ -73,13 +79,37 @@ fun FuelManagementScreen(database: AppDatabase) {
         Spacer(Modifier.height(8.dp))
 
         LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement =
+                Arrangement.spacedBy(10.dp)
         ) {
 
             items(
                 fuelLogs,
                 key = { it.id }
             ) { fuel ->
+
+                val previousFuel = fuelLogs
+                    .filter {
+                        it.vehicleNo == fuel.vehicleNo &&
+                            it.id < fuel.id
+                    }
+                    .maxByOrNull { it.id }
+
+                val mileage = if (
+                    previousFuel != null &&
+                    fuel.kmReading > previousFuel.kmReading &&
+                    fuel.litres > 0f
+                ) {
+
+                    (
+                        (fuel.kmReading -
+                            previousFuel.kmReading).toFloat()
+                            / fuel.litres
+                    )
+
+                } else {
+                    null
+                }
 
                 Card(
                     Modifier.fillMaxWidth()
@@ -91,7 +121,8 @@ fun FuelManagementScreen(database: AppDatabase) {
 
                         Text(
                             fuel.vehicleNo,
-                            style = MaterialTheme.typography.titleLarge
+                            style =
+                                MaterialTheme.typography.titleLarge
                         )
 
                         Text(
@@ -112,10 +143,36 @@ fun FuelManagementScreen(database: AppDatabase) {
                             )
                         }
 
+                        Spacer(Modifier.height(6.dp))
+
+                        if (mileage != null) {
+
+                            Text(
+                                "Mileage: ${
+                                    String.format(
+                                        Locale.getDefault(),
+                                        "%.2f",
+                                        mileage
+                                    )
+                                } km/L",
+                                style =
+                                    MaterialTheme.typography.titleMedium
+                            )
+
+                        } else {
+
+                            Text(
+                                "Mileage: Need previous KM reading",
+                                color =
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
                         Spacer(Modifier.height(8.dp))
 
                         OutlinedButton(
                             onClick = {
+
                                 scope.launch {
                                     dao.deleteFuelLog(fuel)
                                 }
@@ -165,13 +222,16 @@ private fun FuelForm(
     ) {
 
         item {
+
             Text(
                 "Add Fuel Entry",
-                style = MaterialTheme.typography.headlineSmall
+                style =
+                    MaterialTheme.typography.headlineSmall
             )
         }
 
         item {
+
             OutlinedTextField(
                 value = vehicleNo,
                 onValueChange = {
@@ -188,6 +248,7 @@ private fun FuelForm(
         }
 
         item {
+
             OutlinedTextField(
                 value = litres,
                 onValueChange = {
@@ -204,6 +265,7 @@ private fun FuelForm(
         }
 
         item {
+
             OutlinedTextField(
                 value = amount,
                 onValueChange = {
@@ -217,6 +279,7 @@ private fun FuelForm(
         }
 
         item {
+
             OutlinedTextField(
                 value = kmReading,
                 onValueChange = {
@@ -230,6 +293,7 @@ private fun FuelForm(
         }
 
         item {
+
             OutlinedTextField(
                 value = station,
                 onValueChange = {
