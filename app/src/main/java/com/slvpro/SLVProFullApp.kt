@@ -1,5 +1,5 @@
 package com.slvpro
-
+import androidx.compose.material.icons.filled.Build
 import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,7 +19,7 @@ import androidx.compose.material.icons.filled.CameraAlt
 fun SLVProFullApp() {
     val context = androidx.compose.ui.platform.LocalContext.current
     val database = AppDatabase.getInstance(context)
-
+    var showMaintenance by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableIntStateOf(0) }
     var selectedVehicle by remember { mutableStateOf<Vehicle?>(null) }
     var showVehicleManagement by remember { mutableStateOf(false) }
@@ -33,7 +33,10 @@ fun SLVProFullApp() {
         )
         return
     }
-
+if (showMaintenance) {
+    MaintenanceManagementScreen(database)
+    return
+}
     if (showVehicleManagement) {
         VehicleManagementScreen(database)
         return
@@ -80,7 +83,14 @@ if (showDocumentScanner) {
                 contentDescription = "Vehicle Management"
             )
         }
-
+IconButton(
+    onClick = { showMaintenance = true }
+) {
+    Icon(
+        imageVector = Icons.Default.Build,
+        contentDescription = "Maintenance"
+    )
+}
         IconButton(
             onClick = {
                 showDriverManagement = true
