@@ -24,7 +24,7 @@ fun DocumentScannerScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-
+    var showDocumentScanner by remember { mutableStateOf(false) }
     var scannedUri by remember { mutableStateOf<Uri?>(null) }
     var cameraError by remember { mutableStateOf(false) }
 
