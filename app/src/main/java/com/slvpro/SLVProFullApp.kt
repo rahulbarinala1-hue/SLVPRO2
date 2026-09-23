@@ -1,4 +1,6 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.slvpro
+
 import androidx.compose.material.icons.filled.Build
 import android.content.Context
 import androidx.compose.foundation.clickable
