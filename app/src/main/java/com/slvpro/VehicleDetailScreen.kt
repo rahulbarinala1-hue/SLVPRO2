@@ -1,5 +1,6 @@
 package com.slvpro
-
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.foundation.layout.padding
 import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -40,22 +41,25 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.ceil
-Row(
-    modifier = Modifier.fillMaxWidth(),
-    horizontalArrangement = Arrangement.Start
-) {
-    OutlinedButton(
-        onClick = onBack
-    ) {
-        Text("← Back")
-    }
-}
 @Composable
 fun VehicleDetailScreen(
     vehicle: Vehicle,
     context: Context,
     onBack: () -> Unit
 ) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(16.dp, 8.dp),
+        horizontalArrangement = Arrangement.Start
+    ) {
+        OutlinedButton(onClick = onBack) {
+            Text("<- Back")
+        }
+    }
+
+    var currentIndex by remember { 
+        mutableIntStateOf(0) 
+    }
+ 
     var currentIndex by remember {
         mutableIntStateOf(0)
     }
