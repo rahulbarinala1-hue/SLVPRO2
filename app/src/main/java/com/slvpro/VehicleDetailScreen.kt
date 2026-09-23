@@ -14,8 +14,6 @@ fun VehicleDetailScreen(
     context: Context,
     onBack: () -> Unit
 ) {
-    var currentIndex by remember { mutableIntStateOf(0) }
-
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -28,7 +26,6 @@ fun VehicleDetailScreen(
         LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             item {
                 Text("Vehicle: ${vehicle.vehicleNumber}")
-                Text("Name: ${vehicle.name ?: "Vehicle"}")
             }
         }
     }
