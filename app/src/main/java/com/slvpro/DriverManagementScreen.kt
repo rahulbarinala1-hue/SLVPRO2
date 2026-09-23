@@ -118,20 +118,16 @@ fun DriverManagementScreen(database: AppDatabase) {
                                 driver.licenseExpiry
                             )
 
-                        if (driver.licenseExpiry > 0L &&
-                            daysLeft <= 7
-                        ) {
-
-                            Text(
-                                when {
-  daysLeft < 0L -> "Licence expired ${-daysLeft} days ago"
-  daysLeft == 0L -> "License expires today"
-  else -> "License expires in $daysLeft days"
+                        if (driver.licenseExpiry > 0L && daysLeft <= 7L) {
+    Text(
+        when {
+            daysLeft < 0L -> "License expired ${-daysLeft} days ago"
+            daysLeft == 0L -> "License expires today"
+            else -> "License expires in $daysLeft days"
+        },
+        color = MaterialTheme.colorScheme.error
+    )
 }
-                                },
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
 
                         Spacer(Modifier.height(8.dp))
 
