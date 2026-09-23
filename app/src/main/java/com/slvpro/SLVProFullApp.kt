@@ -24,7 +24,7 @@ fun SLVProFullApp() {
     var selectedVehicle by remember { mutableStateOf<Vehicle?>(null) }
     var showVehicleManagement by remember { mutableStateOf(false) }
     var showDriverManagement by remember { mutableStateOf(false) }
-
+    var showDocumentScanner by remember { mutableStateOf(false) }
     if (selectedVehicle != null) {
         VehicleDetailScreen(
             vehicle = selectedVehicle!!,
