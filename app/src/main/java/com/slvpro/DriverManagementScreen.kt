@@ -124,14 +124,10 @@ fun DriverManagementScreen(database: AppDatabase) {
 
                             Text(
                                 when {
-                                    daysLeft < 0 ->
-                                        "🚨 License expired ${-daysLeft} days ago"
-
-                                    daysLeft == 0 ->
-                                        "🚨 License expires today"
-
-                                    else ->
-                                        "⚠️ License expires in $daysLeft days"
+  daysLeft < 0L -> "Licence expired ${-daysLeft} days ago"
+  daysLeft == 0L -> "License expires today"
+  else -> "License expires in $daysLeft days"
+}
                                 },
                                 color = MaterialTheme.colorScheme.error
                             )
