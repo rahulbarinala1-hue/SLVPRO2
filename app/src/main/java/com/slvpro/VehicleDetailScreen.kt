@@ -24,7 +24,7 @@ fun VehicleDetailScreen(
         }
         LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             item {
-                Text("Vehicle: ${vehicle.vehicleNO}")
+                Text("Vehicle: ${vehicle.vehicleNo}")
             }
         }
     }
